@@ -1,0 +1,97 @@
+---
+title: "earthquakr: Visualizing NOAA's Significant Earthquakes"
+author: "Jazmin Cevallos"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{About earthquakr}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r echo=FALSE}
+knitr::opts_chunk$set(fig.width = 6, fig.height = 5,
+                      fig.align = 'center')
+```
+
+En esta ocacion creamos un paquete que analiza la informacion de los terremotos a nivel mundial de los ultimos 4000 años. Esta informacion fue tomada de:Base de datos de terremotos significativa de la NOAA.
+Para iniciar especificaremos distintos puntos:
+
+**Instalar earthquakr**
+
+Para el uso del paquete  `earthquakr`, se debe instalar `devtools` y cargar diferentes librerias como son:
+
+```{r eval=TRUE}
+devtools::install_github('tybyers/earthquakr')
+library(earthquakr)
+library(dplyr)
+library(ggplot2)
+library(readr)
+library(lubridate)
+```
+
+Tras llamar las llibrerias necesarias la programacion consiste en:
+
+```{r}
+quakes <- earthquakr::quakes # loads quakes data with data set
+quakes <- quakes %>%
+  eq_clean_data() %>%
+  eq_location_clean()
+tail(quakes)
+quakes <- eq_load_clean_data()
+tail(quakes)
+filename <- system.file('extdata', 'earthquakes.txt', package = 'earthquakr')
+quakes_from_raw <- readr::read_delim(filename, delim = '\t')
+quakes_from_raw_clean <- quakes_from_raw %>%
+  eq_clean_data() %>%
+  eq_location_clean()
+tail(quakes_from_raw_clean)
+```
+
+**Timeline**
+Permite visualizar los terremotos de gran magnitud donde se muestra una linea del tiempo con los eventos de cada pais mediante `geom_timeline` y `geom_timeline_label` muestra aquellos mas fuertes. Se uso `theme_eq` para hacer de los graficos mas interactivos
+
+```{r}
+quakes <- eq_load_clean_data()
+
+quakes %>%
+  dplyr::filter(COUNTRY == 'USA') %>%
+  dplyr::filter(DATE > '2000-01-01') %>%
+  ggplot() +
+  geom_timeline(aes(x = DATE, y = COUNTRY, color = TOTAL_DEATHS,
+                    size = EQ_PRIMARY)) +
+  scale_size_continuous(name = 'Richter scale value') +
+  scale_color_continuous(name = '# of Deaths')
+
+quakes %>%
+  dplyr::filter(COUNTRY %in% c('USA', 'UK')) %>%
+  dplyr::filter(DATE > '2000-01-01') %>%
+  ggplot() +
+  geom_timeline(aes(x = DATE, y = COUNTRY, color = TOTAL_DEATHS,
+                    size = EQ_PRIMARY)) +
+  scale_size_continuous(name = 'Richter scale value') +
+  scale_color_continuous(name = '# of Deaths')
+
+quakes %>%
+  dplyr::filter(COUNTRY %in% c('NEW ZEALAND', 'SOUTH AFRICA')) %>%
+  dplyr::filter(DATE > '2000-01-01', DATE < '2015-01-01') %>%
+  ggplot() +
+  geom_timeline(aes(x = DATE, y = COUNTRY, color = TOTAL_DEATHS,
+                    size = EQ_PRIMARY)) +
+  geom_timeline_label(aes(x = DATE, y = COUNTRY, magnitude = EQ_PRIMARY,
+                         label = LOCATION_NAME, n_max = 5)) +
+  scale_size_continuous(name = 'Richter scale value') +
+  scale_color_continuous(name = '# of Deaths')
+
+quakes %>%
+  dplyr::filter(COUNTRY %in% c('NEW ZEALAND', 'SOUTH AFRICA')) %>%
+  dplyr::filter(DATE > '2000-01-01', DATE < '2015-01-01') %>%
+  ggplot() +
+  geom_timeline(aes(x = DATE, y = COUNTRY, color = TOTAL_DEATHS,
+                    size = EQ_PRIMARY)) +
+  geom_timeline_label(aes(x = DATE, y = COUNTRY, magnitude = EQ_PRIMARY,
+                         label = LOCATION_NAME, n_max = 5)) +
+  scale_size_continuous(name = 'Richter scale value') +
+  scale_color_continuous(name = '# of Deaths') +
+  theme_eq()
+```
